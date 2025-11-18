@@ -17,18 +17,39 @@ const PaymentDetails = () => {
   const branding = getServiceBranding(serviceKey);
   const shippingInfo = linkData?.payload as any;
 
-  // Debug: Log the payload to check the data
-  console.log('PaymentDetails payload:', linkData?.payload);
+  // Debug: Log all data to check what's happening
+  console.log('=== PaymentDetails Debug ===');
+  console.log('linkData:', linkData);
+  console.log('linkData?.payload:', linkData?.payload);
+  console.log('shippingInfo:', shippingInfo);
+  console.log('shippingInfo.cod_amount:', shippingInfo?.cod_amount);
+  console.log('typeof shippingInfo.cod_amount:', typeof shippingInfo?.cod_amount);
 
   // Get country code from link data
   const countryCode = shippingInfo?.selectedCountry || "SA";
   console.log('Country code:', countryCode);
 
   // Ensure amount is a number, default to 500
-  const amount = parseFloat(shippingInfo?.cod_amount?.toString() || "500");
-  console.log('Amount:', amount, 'Type:', typeof amount);
+  const rawAmount = shippingInfo?.cod_amount;
+  console.log('Raw amount from payload:', rawAmount);
+
+  // Handle different data types and edge cases
+  let amount = 500; // Default value
+  if (rawAmount !== undefined && rawAmount !== null) {
+    if (typeof rawAmount === 'number') {
+      amount = rawAmount;
+    } else if (typeof rawAmount === 'string') {
+      const parsed = parseFloat(rawAmount);
+      if (!isNaN(parsed)) {
+        amount = parsed;
+      }
+    }
+  }
+
+  console.log('Final amount:', amount, 'Type:', typeof amount);
   const formattedAmount = formatCurrency(amount, countryCode);
   console.log('Formatted amount:', formattedAmount);
+  console.log('=== End Debug ===');
   
   const handleProceed = () => {
     // Check payment method from link data
