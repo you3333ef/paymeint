@@ -17,11 +17,18 @@ const PaymentDetails = () => {
   const branding = getServiceBranding(serviceKey);
   const shippingInfo = linkData?.payload as any;
 
+  // Debug: Log the payload to check the data
+  console.log('PaymentDetails payload:', linkData?.payload);
+
   // Get country code from link data
   const countryCode = shippingInfo?.selectedCountry || "SA";
+  console.log('Country code:', countryCode);
 
-  const amount = shippingInfo?.cod_amount || 500;
+  // Ensure amount is a number, default to 500
+  const amount = parseFloat(shippingInfo?.cod_amount?.toString() || "500");
+  console.log('Amount:', amount, 'Type:', typeof amount);
   const formattedAmount = formatCurrency(amount, countryCode);
+  console.log('Formatted amount:', formattedAmount);
   
   const handleProceed = () => {
     // Check payment method from link data
