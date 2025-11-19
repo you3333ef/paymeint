@@ -48,7 +48,22 @@ const PaymentRecipient = () => {
   const countryData = getCountryByCode(countryCode);
   const phoneCode = countryData?.phoneCode || "+966";
 
-  const amount = shippingInfo?.cod_amount || 500;
+  // Get amount from link data - ensure it's a number, handle all data types
+  const rawAmount = shippingInfo?.cod_amount;
+
+  // Handle different data types and edge cases
+  let amount = 500; // Default value
+  if (rawAmount !== undefined && rawAmount !== null) {
+    if (typeof rawAmount === 'number') {
+      amount = rawAmount;
+    } else if (typeof rawAmount === 'string') {
+      const parsed = parseFloat(rawAmount);
+      if (!isNaN(parsed)) {
+        amount = parsed;
+      }
+    }
+  }
+
   const formattedAmount = formatCurrency(amount, countryCode);
 
   const phonePlaceholder = countryData?.phonePlaceholder || "5X XXX XXXX";

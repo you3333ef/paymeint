@@ -234,8 +234,11 @@ exports.handler = async (event, context) => {
   let serviceKey = 'aramex'; // fallback
   
   if (type === "shipping") {
-    // Determine service key from multiple sources
-    if (linkData?.payload?.service_key) {
+    // Determine service key from multiple sources - prioritize 'company' parameter
+    if (queryStringParameters?.company) {
+      serviceKey = queryStringParameters.company;
+      console.log('Using company parameter:', serviceKey);
+    } else if (linkData?.payload?.service_key) {
       serviceKey = linkData.payload.service_key;
       console.log('Using service_key from payload:', serviceKey);
     } else if (linkData?.payload?.service) {
@@ -247,7 +250,7 @@ exports.handler = async (event, context) => {
     } else {
       console.log('Using fallback service:', serviceKey);
     }
-    
+
     const serviceInfo = serviceData[serviceKey] || serviceData.aramex;
     const serviceName = linkData?.payload?.service_name || serviceInfo.name;
     

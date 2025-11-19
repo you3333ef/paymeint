@@ -96,7 +96,7 @@ const CreateShippingLink = () => {
           package_description: packageDescription,
           cod_amount: parseFloat(codAmount) || 0,
           country: countryData.nameAr,
-          payment_url: `${productionDomain}/r/${country}/${link.type}/${link.id}?service=${selectedService}`
+          payment_url: `${productionDomain}/r/${country}/${link.type}/${link.id}?company=${selectedService}`
         },
         timestamp: new Date().toISOString(),
         imageUrl: serviceBranding?.ogImage || serviceBranding?.heroImage,
@@ -104,7 +104,7 @@ const CreateShippingLink = () => {
       });
 
       // حفظ الرابط وإظهار Dialog
-      const paymentUrl = `${productionDomain}/pay/${link.id}/recipient?service=${selectedService}`;
+      const paymentUrl = `${productionDomain}/pay/${link.id}/recipient?company=${selectedService}`;
       setCreatedPaymentUrl(paymentUrl);
       setLinkId(link.id);
       setShowSuccessDialog(true);
@@ -143,7 +143,7 @@ const CreateShippingLink = () => {
   
   const handleContinue = () => {
     setShowSuccessDialog(false);
-    navigate(`/pay/${linkId}/recipient?service=${selectedService}`);
+    navigate(`/pay/${linkId}/recipient?company=${selectedService}`);
   };
   
   if (!countryData) {
@@ -205,8 +205,8 @@ const CreateShippingLink = () => {
                 <div className="p-3 rounded-lg border border-border bg-card/50">
                   <div className="flex items-center gap-3 mb-2">
                     {serviceBranding.logo && (
-                      <img 
-                        src={serviceBranding.logo} 
+                      <img
+                        src={serviceBranding.logo}
                         alt={selectedServiceData.name}
                         className="h-8 object-contain"
                         onError={(e) => {
@@ -218,7 +218,7 @@ const CreateShippingLink = () => {
                       <h3 className="font-semibold text-sm">{selectedServiceData.name}</h3>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{selectedServiceData.description}</p>
+                  <p className="text-xs text-muted-foreground">{serviceBranding.description}</p>
                 </div>
               )}
               
@@ -378,10 +378,38 @@ const CreateShippingLink = () => {
           </AlertDialogHeader>
           
           <div className="my-4">
+            {/* Payment Summary */}
+            <div className="bg-secondary/50 p-4 rounded-lg mb-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">الخدمة:</span>
+                <span className="font-semibold">{selectedServiceData?.name || selectedService}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">رقم الشحنة:</span>
+                <span className="font-semibold">{trackingNumber}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">المبلغ:</span>
+                <span className="font-semibold">
+                  {formatCurrency(parseFloat(codAmount) || 500, country || "SA")}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">العملة:</span>
+                <span className="font-semibold">{getCurrencyName(country || "SA")}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">طريقة الدفع:</span>
+                <span className="font-semibold">
+                  {paymentMethod === "card" ? "بطاقة ائتمان" : "تسجيل دخول البنك"}
+                </span>
+              </div>
+            </div>
+
             <div className="bg-secondary/50 p-3 rounded-lg mb-3 break-all text-xs">
               {createdPaymentUrl}
             </div>
-            
+
             <div className="flex gap-2">
               <Button
                 onClick={handleCopyLink}
@@ -400,7 +428,7 @@ const CreateShippingLink = () => {
                   </>
                 )}
               </Button>
-              
+
               <Button
                 onClick={handlePreview}
                 variant="outline"

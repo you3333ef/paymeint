@@ -112,11 +112,39 @@ const CreateChaletLink = () => {
             <p className="text-sm text-muted-foreground mb-4">
               شارك هذا الرابط مع عملائك
             </p>
-            
+
+            {/* Booking Summary */}
+            <div className="bg-secondary/50 p-4 rounded-lg mb-4 space-y-2 text-right">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold">{selectedChalet?.name}</span>
+                <span className="text-muted-foreground">الشاليه:</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold">{nights} ليلة</span>
+                <span className="text-muted-foreground">المدة:</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold">{guestCount} ضيف</span>
+                <span className="text-muted-foreground">الضيوف:</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold">
+                  {formatCurrency(pricePerNight, countryData.currency)}
+                </span>
+                <span className="text-muted-foreground">سعر الليلة:</span>
+              </div>
+              <div className="flex items-center justify-between text-sm pt-2 border-t border-border/50">
+                <span className="font-bold text-lg">
+                  {formatCurrency(totalAmount, countryData.currency)}
+                </span>
+                <span className="text-muted-foreground">الإجمالي:</span>
+              </div>
+            </div>
+
             <div className="bg-secondary/50 p-3 rounded-lg mb-4 break-all">
               <code className="text-xs">{createdLink}</code>
             </div>
-            
+
             <div className="flex gap-3 justify-center">
               <Button onClick={handleCopy}>
                 {copied ? (
@@ -131,7 +159,7 @@ const CreateChaletLink = () => {
                   </>
                 )}
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={() => window.open(createdLink, "_blank")}
