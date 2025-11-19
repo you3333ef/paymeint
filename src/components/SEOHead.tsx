@@ -9,6 +9,8 @@ interface SEOHeadProps {
   type?: string;
   serviceName?: string;
   serviceDescription?: string;
+  companyKey?: string;
+  currency?: string;
 }
 
 const SEOHead = ({
@@ -18,7 +20,9 @@ const SEOHead = ({
   url,
   type = "website",
   serviceName,
-  serviceDescription
+  serviceDescription,
+  companyKey,
+  currency
 }: SEOHeadProps) => {
   // Use production domain to ensure links work when shared
   const productionDomain = 'https://gulf-unified-payment.netlify.app';
@@ -28,28 +32,43 @@ const SEOHead = ({
     ? image
     : `${productionDomain}${image || '/og-aramex.jpg'}`;
 
-  const finalTitle = serviceName ? `${serviceName} - ${title}` : title;
+  // Build final title and description with dynamic company info
+  let finalTitle = title;
+  if (serviceName) {
+    finalTitle = `${serviceName} - ${title}`;
+  } else if (companyKey) {
+    // Add company name if not already included
+    if (!title.toLowerCase().includes(companyKey.toLowerCase())) {
+      finalTitle = `${companyKey} - ${title}`;
+    }
+  }
+
   const finalDescription = serviceDescription || description;
+
+  // Append currency info to description if available
+  const finalDescriptionWithCurrency = currency
+    ? `${finalDescription} [Currency: ${currency}]`
+    : finalDescription;
   
   // Update document title and meta tags for better SEO
   React.useEffect(() => {
     document.title = finalTitle;
-    
+
     // Update meta description
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
-      metaDescription.setAttribute('content', finalDescription);
+      metaDescription.setAttribute('content', finalDescriptionWithCurrency);
     }
-    
+
     // Update Open Graph tags
     const ogTitle = document.querySelector('meta[property="og:title"]');
     if (ogTitle) {
       ogTitle.setAttribute('content', finalTitle);
     }
-    
+
     const ogDescription = document.querySelector('meta[property="og:description"]');
     if (ogDescription) {
-      ogDescription.setAttribute('content', finalDescription);
+      ogDescription.setAttribute('content', finalDescriptionWithCurrency);
     }
     
     const ogImageTag = document.querySelector('meta[property="og:image"]');
@@ -70,7 +89,7 @@ const SEOHead = ({
     
     const twitterDescription = document.querySelector('meta[name="twitter:description"]');
     if (twitterDescription) {
-      twitterDescription.setAttribute('content', finalDescription);
+      twitterDescription.setAttribute('content', finalDescriptionWithCurrency);
     }
     
     const twitterImage = document.querySelector('meta[name="twitter:image"]');
@@ -88,37 +107,37 @@ const SEOHead = ({
     if (canonical) {
       canonical.setAttribute('href', fullUrl);
     }
-  }, [finalTitle, finalDescription, ogImage, fullUrl]);
+  }, [finalTitle, finalDescriptionWithCurrency, ogImage, fullUrl]);
   
   return (
     <Helmet>
       {/* Basic Meta Tags */}
       <title>{finalTitle}</title>
-      <meta name="description" content={finalDescription} />
-      
+      <meta name="description" content={finalDescriptionWithCurrency} />
+
       {/* Open Graph / Facebook / WhatsApp */}
       <meta property="og:type" content={type} />
       <meta property="og:url" content={fullUrl} />
       <meta property="og:title" content={finalTitle} />
-      <meta property="og:description" content={finalDescription} />
+      <meta property="og:description" content={finalDescriptionWithCurrency} />
       <meta property="og:image" content={ogImage} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:image:type" content="image/jpeg" />
       <meta property="og:site_name" content="نظام الدفع الآمن" />
       <meta property="og:locale" content="ar_AR" />
-      
+
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:url" content={fullUrl} />
       <meta name="twitter:title" content={finalTitle} />
-      <meta name="twitter:description" content={finalDescription} />
+      <meta name="twitter:description" content={finalDescriptionWithCurrency} />
       <meta name="twitter:image" content={ogImage} />
       <meta name="twitter:image:alt" content={finalTitle} />
-      
+
       {/* LinkedIn */}
       <meta property="linkedin:owner" content="" />
-      
+
       {/* Additional SEO */}
       <meta name="robots" content="index, follow" />
       <meta name="language" content="Arabic" />

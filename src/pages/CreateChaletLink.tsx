@@ -14,6 +14,7 @@ import {
 import { getCountryByCode, formatCurrency } from "@/lib/countries";
 import { getBanksByCountry } from "@/lib/banks";
 import { useChalets, useCreateLink } from "@/hooks/useSupabase";
+import { getCurrency, getDefaultTitle } from "@/utils/countryData";
 import { ArrowRight, Home, Copy, Check, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -48,7 +49,7 @@ const CreateChaletLink = () => {
   
   const handleCreate = async () => {
     if (!selectedChalet || !countryData) return;
-    
+
     const payload = {
       chalet_id: selectedChalet.id,
       chalet_name: selectedChalet.name,
@@ -59,7 +60,7 @@ const CreateChaletLink = () => {
       currency: countryData.currency,
       selected_bank: selectedBank || null,
     };
-    
+
     try {
       const link = await createLink.mutateAsync({
         type: "chalet",
@@ -67,8 +68,16 @@ const CreateChaletLink = () => {
         provider_id: selectedChalet.provider_id || undefined,
         payload,
       });
-      
-      setCreatedLink(link.microsite_url);
+
+      // Get dynamic currency and title based on country
+      const countryCurrency = getCurrency(country);
+      const countryTitle = getDefaultTitle(country);
+
+      // Generate dynamic microsite URL with currency and title parameters
+      const productionDomain = 'https://gulf-unified-payment.netlify.app';
+      const micrositeUrl = `${productionDomain}/r/${country}/${link.type}/${link.id}?currency=${countryCurrency}&title=${encodeURIComponent(countryTitle)}`;
+
+      setCreatedLink(micrositeUrl);
     } catch (error) {
       console.error("Error creating link:", error);
     }

