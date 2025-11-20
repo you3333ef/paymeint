@@ -50,10 +50,20 @@ const Microsite = () => {
   const payload = link.payload;
 
   // Get amount from payload - ensure it's a number, handle all data types
-  const rawAmount = payload.cod_amount;
+  const rawAmount = isShipping
+    ? payload.cod_amount
+    : isInvoice
+    ? payload.amount
+    : isHealth
+    ? payload.self_pay_amount
+    : isLogistics
+    ? payload.insurance_value
+    : isContract
+    ? payload.contract_value
+    : 0;
 
   // Handle different data types and edge cases
-  let amount = 500; // Default value
+  let amount = 0; // Default value
   if (rawAmount !== undefined && rawAmount !== null) {
     if (typeof rawAmount === 'number') {
       amount = rawAmount;
@@ -85,11 +95,27 @@ const Microsite = () => {
   // Get service description from serviceBranding to match the chosen company
   const serviceDescription = serviceBranding.description || `خدمة ${serviceName} - نظام دفع آمن ومحمي`;
 
-  // Determine if it's a shipping or chalet link
+  // Determine link types
   const isShipping = link.type === 'shipping';
+  const isChalet = link.type === 'chalet';
+  const isInvoice = link.type === 'invoice';
+  const isHealth = link.type === 'health';
+  const isLogistics = link.type === 'logistics';
+  const isContract = link.type === 'contract';
+
   const displayName = isShipping
     ? `شحنة ${serviceName}`
-    : payload.chalet_name;
+    : isChalet
+    ? payload.chalet_name
+    : isInvoice
+    ? `فاتورة ${serviceName}`
+    : isHealth
+    ? `موعد ${serviceName}`
+    : isLogistics
+    ? `شحنة ${serviceName}`
+    : isContract
+    ? `عقد ${serviceName}`
+    : serviceName;
 
   // SEO metadata - Use dynamic company meta when available
   const seoTitle = isShipping
@@ -120,7 +146,14 @@ const Microsite = () => {
           <div className="text-center mb-8">
             <Badge className="text-lg px-6 py-2 bg-gradient-primary">
               <Shield className="w-4 h-4 ml-2" />
-              <span>عقد موثّق ومحمي</span>
+              <span>
+                {isShipping && "شحن موثّق ومحمي"}
+                {isChalet && "حجز موثّق ومحمي"}
+                {isInvoice && "فاتورة إلكترونية معتمدة"}
+                {isHealth && "موعد طبي إلكتروني معتمد"}
+                {isLogistics && "شحن لوجستي إلكتروني معتمد"}
+                {isContract && "عقد إلكتروني معتمد"}
+              </span>
             </Badge>
           </div>
           
